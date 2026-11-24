@@ -1,0 +1,57 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="BillPaymentWebApp.Site" %>
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head runat="server">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/jpeg" href="Content/images/jambank-logo.jpg" />
+    <title><asp:ContentPlaceHolder ID="head" runat="server"></asp:ContentPlaceHolder></title>
+    <link href="Content/bootstrap.min.css" rel="stylesheet" />
+    <link href="Content/Site.css" rel="stylesheet" />
+</head>
+<body>
+    <form id="form1" runat="server">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-jam sticky-top">
+            <div class="container-fluid">
+                <a class="navbar-brand d-flex align-items-center" href="Default.aspx">
+                    <img src="Content/images/jambank-logo.jpg" alt="JamBank logo" height="34" class="me-2 rounded-circle" />
+                    JamBank Online Banking
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <div class="navbar-nav">
+                        <a id="navHome" runat="server" class="nav-link" href="Default.aspx">Home</a>
+                        <span id="navMember" runat="server">
+                            <a id="navAccounts" runat="server" class="nav-link" href="Accounts.aspx">My Accounts</a>
+                            <a id="navPay" runat="server" class="nav-link" href="PayBills.aspx">Pay Bills</a>
+                            <a id="navLink" runat="server" class="nav-link" href="LinkAccount.aspx">Link Account</a>
+                        </span>
+                    </div>
+                    <div class="navbar-nav ms-auto align-items-lg-center">
+                        <span id="navUser" runat="server" class="navbar-text text-white-50 me-2">
+                            Hi, <asp:Literal ID="litNavUser" runat="server" />
+                        </span>
+                        <span id="navAuth" runat="server">
+                            <a class="nav-link" href="Login.aspx">Log On</a>
+                        </span>
+                        <span id="navLogout" runat="server">
+                            <asp:LinkButton ID="btnLogout" runat="server" CssClass="nav-link" OnClick="btnLogout_Click">Log Off</asp:LinkButton>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <div class="container mt-4">
+            <asp:ContentPlaceHolder ID="MainContent" runat="server"></asp:ContentPlaceHolder>
+        </div>
+        <footer class="site-footer text-center mt-5 py-3">
+            <small>JamBank &middot; CIT4009 Group Project &middot; </small>
+        </footer>
+        <script src="Scripts/bootstrap.bundle.min.js"></script>
+    </form>
+</body>
+</html>

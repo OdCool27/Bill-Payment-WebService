@@ -1,0 +1,466 @@
+﻿/* ===== JamBank Online Banking theme v2 ===== */
+:root {
+    --jam-navy: #0b2545;
+    --jam-navy-dark: #06182f;
+    --jam-navy-mid: #13315c;
+    --jam-blue: #1d4e89;
+    --jam-gold: #f2b73d;
+    --jam-gold-soft: #ffd27a;
+    --jam-light: #eef2f8;
+    --jam-text: #1f2d40;
+    --jam-muted: #6f7d92;
+    --jam-shadow: 0 8px 24px rgba(6, 24, 47, .10);
+    --jam-shadow-lg: 0 16px 40px rgba(6, 24, 47, .16);
+    --jam-radius: 14px;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background-color: var(--jam-light);
+    color: var(--jam-text);
+    -webkit-font-smoothing: antialiased;
+}
+
+.container {
+    min-height: 72vh;
+}
+
+/* ===== Navbar ===== */
+.bg-jam {
+    background: linear-gradient(90deg, var(--jam-navy-dark) 0%, var(--jam-navy) 55%, var(--jam-navy-mid) 100%);
+    box-shadow: 0 2px 12px rgba(6, 24, 47, .25);
+}
+
+    .bg-jam .navbar-brand {
+        font-weight: 700;
+        letter-spacing: .4px;
+    }
+
+    .bg-jam .nav-link {
+        color: #cfd9e8;
+        font-weight: 500;
+        border-radius: 8px;
+        padding: .45rem .8rem;
+        transition: color .18s ease, background-color .18s ease;
+    }
+
+        .bg-jam .nav-link:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, .08);
+        }
+
+        .bg-jam .nav-link.active {
+            color: var(--jam-gold);
+            background: rgba(255, 255, 255, .08);
+        }
+
+    .bg-jam .navbar-text {
+        color: rgba(255, 255, 255, .65);
+    }
+
+/* ===== Hero ===== */
+.hero {
+    background: radial-gradient(ellipse at 85% 15%, rgba(242, 183, 61, .14) 0%, transparent 45%), linear-gradient(135deg, var(--jam-navy-dark) 0%, var(--jam-navy) 55%, var(--jam-blue) 100%);
+    color: #fff;
+    border-radius: 1.1rem;
+    padding: 3.5rem 2rem;
+    box-shadow: var(--jam-shadow-lg);
+    border: 1px solid rgba(255, 255, 255, .06);
+}
+
+    .hero .hero-gold {
+        color: var(--jam-gold);
+    }
+
+    .hero .btn-gold {
+        background: linear-gradient(135deg, var(--jam-gold) 0%, var(--jam-gold-soft) 100%);
+        border: 0;
+        color: var(--jam-navy-dark);
+        font-weight: 700;
+        border-radius: 10px;
+        box-shadow: 0 6px 18px rgba(242, 183, 61, .35);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+        .hero .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(242, 183, 61, .45);
+        }
+
+/* ===== Feature cards ===== */
+.feature-card {
+    background: #fff;
+    border: 0;
+    border-radius: var(--jam-radius);
+    box-shadow: var(--jam-shadow);
+    transition: transform .18s ease, box-shadow .18s ease;
+    height: 100%;
+    border-top: 3px solid transparent;
+}
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--jam-shadow-lg);
+        border-top-color: var(--jam-gold);
+    }
+
+    .feature-card .icon-badge {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(29, 78, 137, .12), rgba(242, 183, 61, .18));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        color: var(--jam-navy);
+    }
+
+    .feature-card h5 {
+        color: var(--jam-navy);
+        font-weight: 600;
+    }
+
+/* ===== Auth card ===== */
+.auth-card {
+    background: #fff;
+    border: 0;
+    border-radius: var(--jam-radius);
+    box-shadow: var(--jam-shadow-lg);
+    padding: 2.2rem;
+}
+
+    .auth-card h2 {
+        color: var(--jam-navy);
+        font-weight: 700;
+    }
+
+.form-control:focus {
+    border-color: var(--jam-blue);
+    box-shadow: 0 0 0 .2rem rgba(29, 78, 137, .15);
+}
+
+/* ===== Panels ===== */
+.panel {
+    background: #fff;
+    border: 0;
+    border-radius: var(--jam-radius);
+    box-shadow: var(--jam-shadow);
+    padding: 1.5rem;
+}
+
+    .panel h2, .panel h5 {
+        color: var(--jam-navy);
+        font-weight: 600;
+    }
+
+/* ===== Account cards ===== */
+.account-card {
+    position: relative;
+    background: radial-gradient(ellipse at 90% 0%, rgba(255, 255, 255, .12) 0%, transparent 50%), linear-gradient(135deg, var(--jam-navy) 0%, var(--jam-blue) 100%);
+    color: #fff;
+    border-radius: var(--jam-radius);
+    padding: 1.25rem;
+    box-shadow: 0 12px 28px rgba(6, 24, 47, .28);
+    min-height: 10.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+    .account-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 18px 36px rgba(6, 24, 47, .32);
+    }
+
+    /* Gold chip graphic, top right */
+    .account-card .acc-chip {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 30px;
+        height: 22px;
+        border-radius: 5px;
+        background: linear-gradient(135deg, var(--jam-gold) 0%, var(--jam-gold-soft) 100%);
+        opacity: .95;
+    }
+
+    .account-card .acc-label {
+        font-size: .75rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #9fb8d8;
+    }
+
+    .account-card .acc-nickname {
+        font-size: .95rem;
+        margin-top: .15rem;
+    }
+
+    .account-card .acc-number {
+        font-size: 1rem;
+        letter-spacing: 2px;
+        color: #dbe6f5;
+    }
+
+    .account-card .acc-balance {
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: var(--jam-gold);
+    }
+
+    .account-card .acc-details {
+        font-size: .72rem;
+        color: #cfe0f2;
+        text-decoration: underline;
+    }
+
+    .account-card .btn-gold {
+        background: linear-gradient(135deg, var(--jam-gold), var(--jam-gold-soft));
+        border: 0;
+        color: var(--jam-navy-dark);
+        font-weight: 700;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, .3);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+        .account-card .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, .35);
+        }
+
+/* ===== Stat strip ===== */
+.stat-card {
+    background: #fff;
+    border-radius: var(--jam-radius);
+    box-shadow: var(--jam-shadow);
+    padding: 1rem 1.1rem;
+    transition: transform .15s ease;
+}
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .stat-card .stat-k {
+        font-size: .75rem;
+        color: var(--jam-muted);
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+    .stat-card .stat-v {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--jam-navy);
+    }
+
+/* ===== Biller cards ===== */
+.biller-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid var(--jam-gold);
+    border-radius: 10px;
+    padding: .85rem 1rem;
+    margin-bottom: .6rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: box-shadow .15s ease;
+}
+
+    .biller-card:hover {
+        box-shadow: var(--jam-shadow);
+    }
+
+    .biller-card b {
+        color: var(--jam-navy);
+        display: block;
+        font-size: .95rem;
+    }
+
+    .biller-card span {
+        font-size: .8rem;
+        color: var(--jam-muted);
+    }
+
+    
+    .biller-card .btn-gold {
+        background: linear-gradient(135deg, var(--jam-gold), var(--jam-gold-soft));
+        border: 0;
+        color: var(--jam-navy-dark);
+        font-weight: 700;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+        .biller-card .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0, 0, 0, .25);
+        }
+
+/* ===== Ghost button (header actions) ===== */
+.btn-ghost {
+    border: 1px solid #d7dee9;
+    background: #fff;
+    color: var(--jam-navy);
+    font-size: .8rem;
+    font-weight: 600;
+    padding: .4rem .8rem;
+    border-radius: 8px;
+    transition: background-color .15s ease;
+}
+
+    .btn-ghost:hover {
+        background: #f4f7fb;
+    }
+
+/* ===== Tables ===== */
+.table thead th {
+    color: var(--jam-navy);
+    border-bottom: 2px solid var(--jam-navy);
+    font-size: .85rem;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+/* ===== Buttons ===== */
+.btn-jam {
+    background: linear-gradient(135deg, var(--jam-navy) 0%, var(--jam-blue) 100%);
+    border: 0;
+    color: #fff;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+    .btn-jam:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(6, 24, 47, .3);
+        color: #fff;
+    }
+
+/* ===== Transactions ===== */
+.txn-in {
+    color: #158f4c;
+    font-weight: 600;
+}
+
+.txn-out {
+    color: #c0392b;
+    font-weight: 600;
+}
+
+.badge-completed {
+    background-color: rgba(21, 143, 76, .12);
+    color: #158f4c;
+    border-radius: 2rem;
+    padding: .2em .8em;
+    font-size: .78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+/* ===== Footer ===== */
+.site-footer {
+    border-top: 1px solid #e2e8f0;
+    background: #fff;
+}
+
+    .site-footer small {
+        color: var(--jam-muted);
+    }
+
+
+span#navMember {
+    display: contents;
+}
+
+/* ===== Split login ===== */
+.login-split {
+    display: flex;
+    flex-wrap: wrap;
+    border-radius: var(--jam-radius);
+    overflow: hidden;
+    box-shadow: var(--jam-shadow-lg);
+    min-height: 380px;
+}
+
+.login-brand {
+    flex: 1 1 240px;
+    background: radial-gradient(ellipse at 80% 10%, rgba(242, 183, 61, .16) 0%, transparent 50%), linear-gradient(150deg, var(--jam-navy-dark), var(--jam-navy) 60%, var(--jam-blue));
+    color: #fff;
+    padding: 26px 22px;
+    display: flex;
+    flex-direction: column;
+}
+
+.login-logo {
+    width: 44px;
+    height: 44px;
+}
+
+.login-brand h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 16px 0 2px;
+}
+
+    .login-brand h2 span {
+        color: var(--jam-gold);
+    }
+
+.login-brand p {
+    font-size: .8rem;
+    opacity: .85;
+}
+
+.login-points {
+    margin-top: auto;
+    font-size: .8rem;
+    opacity: .9;
+    line-height: 2;
+}
+
+.login-form {
+    flex: 1 1 260px;
+    background: #fff;
+    padding: 26px 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+    .login-form h3 {
+        color: var(--jam-navy);
+        font-weight: 700;
+    }
+
+.login-forgot {
+    font-size: .75rem;
+    color: var(--jam-blue);
+}
+
+.soft-input {
+    background-color: #f8fafc;
+}
+
+    .soft-input:focus {
+        background-color: #fff;
+    }
+
+.login-secure {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+    font-size: .72rem;
+    color: var(--jam-muted);
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid #eef1f6;
+}
