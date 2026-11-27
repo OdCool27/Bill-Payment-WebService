@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="PayBills.aspx.cs" Inherits="BillPaymentWebApp.PayBills" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" Async="true" CodeBehind="PayBills.aspx.cs" Inherits="BillPaymentWebApp.PayBills" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <div class="row justify-content-center my-4">
         <div class="col-lg-7">

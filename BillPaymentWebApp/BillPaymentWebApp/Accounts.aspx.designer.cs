@@ -87,6 +87,11 @@ namespace BillPaymentWebApp
         protected global::System.Web.UI.WebControls.Panel pnlAccountCards;
 
         /// <summary>
+        /// pnlLinkedAccounts control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Panel pnlLinkedAccounts;
+
+        /// <summary>
         /// pnlNoTxn control.
         /// </summary>
         /// <remarks>

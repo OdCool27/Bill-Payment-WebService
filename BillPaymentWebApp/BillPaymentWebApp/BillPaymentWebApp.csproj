@@ -1,4 +1,4 @@
-﻿<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props" Condition="Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -87,9 +87,17 @@
     <Content Include="Content\images\jambank-logo.jpg" />
     <Content Include="Content\Site.css" />
     <Content Include="Default.aspx" />
+    <Content Include="Database\001_partner_schema.sql" />
+    <Content Include="Database\002_partner_seed.sql" />
+    <Content Include="Database\003_jambank_schema.sql" />
+    <Content Include="Database\README.md" />
     <Content Include="Error.aspx" />
+    <Content Include="FlowService.asmx" />
     <Content Include="Global.asax" />
+    <Content Include="LinkAccount.aspx" />
     <Content Include="Login.aspx" />
+    <Content Include="PayBills.aspx" />
+    <Content Include="SagicorService.asmx" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
     <Content Include="Scripts\bootstrap.esm.js" />
@@ -97,6 +105,10 @@
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Web.config" />
+    <Content Include="api\flow\accounts\verify.ashx" />
+    <Content Include="api\flow\payments.ashx" />
+    <Content Include="api\sagicor\accounts\verify.ashx" />
+    <Content Include="api\sagicor\payments.ashx" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Accounts.aspx.cs">
@@ -123,6 +135,14 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="JamBankSchemaInitializer.cs" />
+    <Compile Include="LinkAccount.aspx.cs">
+      <DependentUpon>LinkAccount.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="LinkAccount.aspx.designer.cs">
+      <DependentUpon>LinkAccount.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Login.aspx.cs">
       <DependentUpon>Login.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -130,7 +150,18 @@
     <Compile Include="Login.aspx.designer.cs">
       <DependentUpon>Login.aspx</DependentUpon>
     </Compile>
+    <Compile Include="PayBills.aspx.cs">
+      <DependentUpon>PayBills.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="PayBills.aspx.designer.cs">
+      <DependentUpon>PayBills.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PartnerServices\PartnerModels.cs" />
+    <Compile Include="PartnerServices\PartnerRepository.cs" />
+    <Compile Include="PartnerServices\PartnerHttpHandler.cs" />
+    <Compile Include="PartnerServices\PartnerEndpointHandlers.cs" />
     <Compile Include="Site.Master.cs">
       <DependentUpon>Site.Master</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>

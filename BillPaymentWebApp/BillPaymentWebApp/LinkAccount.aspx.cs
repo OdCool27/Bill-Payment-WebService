@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
-using System.Net.Http;
+using System.Net;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 
@@ -9,8 +10,6 @@ namespace BillPaymentWebApp
 {
     public partial class LinkAccount : System.Web.UI.Page
     {
-        private static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-
         protected void Page_Load(object sender, EventArgs e)
         {
             if (Session["UserId"] == null)
@@ -37,11 +36,18 @@ namespace BillPaymentWebApp
                     return;
                 }
 
-                bool exists = await CheckAccountExistsAsync(biller, accountNumber);
-                if (!exists)
+                AccountVerificationResult verification = await CheckAccountExistsAsync(biller, accountNumber);
+                if (!verification.Success || !verification.Exists)
                 {
                     lblMessage.CssClass = "text-danger d-block mb-3";
                     lblMessage.Text = $"No active {biller} account found for '{accountNumber}'. Please check the number and try again.";
+                    return;
+                }
+
+                if (!string.Equals(verification.AccountStatus, "ACTIVE", StringComparison.OrdinalIgnoreCase))
+                {
+                    lblMessage.CssClass = "text-danger d-block mb-3";
+                    lblMessage.Text = $"The {biller} account '{accountNumber}' exists but is inactive and cannot be linked for payments.";
                     return;
                 }
 
@@ -54,46 +60,93 @@ namespace BillPaymentWebApp
                 txtAccountNumber.Text = string.Empty;
                 txtNickname.Text = string.Empty;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                System.Diagnostics.Trace.TraceError("LinkAccount submission failed: {0}", ex);
                 lblMessage.CssClass = "text-danger d-block mb-3";
-                lblMessage.Text = "Unable to verify or link your account right now. Please try again later.";
+                lblMessage.Text = Context.IsDebuggingEnabled
+                    ? "Unable to verify or link your account: " + Server.HtmlEncode(ex.GetType().Name + ": " + ex.Message)
+                    : "Unable to verify or link your account right now. Please try again later.";
             }
         }
 
-        private async Task<bool> CheckAccountExistsAsync(string biller, string accountNumber)
+        private async Task<AccountVerificationResult> CheckAccountExistsAsync(string biller, string accountNumber)
         {
-            string baseUrl = ConfigurationManager.AppSettings["PartnerServiceBaseUrl"] ?? "https://localhost:44301/api/partner";
-            string url = $"{baseUrl.TrimEnd('/')}/check-account-exists?biller={Uri.EscapeDataString(biller)}&accountNumber={Uri.EscapeDataString(accountNumber)}";
+            string baseUrl = ConfigurationManager.AppSettings["PartnerServiceBaseUrl"] ?? "http://localhost:53890";
+            string provider = biller.Equals("SAGICOR", StringComparison.OrdinalIgnoreCase) ? "sagicor" : "flow";
+            string url = $"{baseUrl.TrimEnd('/')}/api/{provider}/accounts/verify";
+            var payload = new { accountNumber = accountNumber };
+            var serializer = new JavaScriptSerializer();
+            string json = serializer.Serialize(payload);
 
-            HttpResponseMessage response = await Http.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
+            using (var client = new WebClient())
             {
-                throw new InvalidOperationException("Partner account verification failed.");
+                client.Headers[HttpRequestHeader.ContentType] = "application/json";
+                string responseJson = await client.UploadStringTaskAsync(new Uri(url), "POST", json);
+                IDictionary<string, object> data = GetAsmxResponseData(serializer.DeserializeObject(responseJson));
+                if (data == null)
+                    return new AccountVerificationResult();
+
+                return new AccountVerificationResult
+                {
+                    Success = ReadBoolean(data, "Success"),
+                    Exists = ReadBoolean(data, "Exists"),
+                    AccountStatus = ReadString(data, "AccountStatus")
+                };
+            }
+        }
+
+        private static IDictionary<string, object> GetAsmxResponseData(object response)
+        {
+            var envelope = response as IDictionary<string, object>;
+            if (envelope == null)
+                return null;
+
+            foreach (KeyValuePair<string, object> item in envelope)
+            {
+                if (string.Equals(item.Key, "d", StringComparison.OrdinalIgnoreCase))
+                    return item.Value as IDictionary<string, object>;
             }
 
-            string json = await response.Content.ReadAsStringAsync();
-            var serializer = new JavaScriptSerializer();
-            var payload = serializer.Deserialize<AccountExistsResult>(json);
-            return payload != null && payload.Exists;
+            return envelope;
+        }
+
+        private static bool ReadBoolean(IDictionary<string, object> values, string name)
+        {
+            foreach (KeyValuePair<string, object> item in values)
+            {
+                if (string.Equals(item.Key, name, StringComparison.OrdinalIgnoreCase))
+                    return item.Value is bool && (bool)item.Value;
+            }
+
+            return false;
+        }
+
+        private static string ReadString(IDictionary<string, object> values, string name)
+        {
+            foreach (KeyValuePair<string, object> item in values)
+            {
+                if (string.Equals(item.Key, name, StringComparison.OrdinalIgnoreCase))
+                    return item.Value == null ? null : Convert.ToString(item.Value);
+            }
+
+            return null;
         }
 
         private void SaveLinkedBillerAccount(int userId, string biller, string accountNumber, string nickname)
         {
-            var connString = ConfigurationManager.ConnectionStrings["JamBankConnection"];
-            if (connString == null)
-            {
-                return;
-            }
+            var connString = ConfigurationManager.ConnectionStrings["PartnerDatabase"];
+            if (connString == null || string.IsNullOrWhiteSpace(connString.ConnectionString))
+                throw new InvalidOperationException("The PartnerDatabase connection string is not configured.");
 
             using (var conn = new SqlConnection(connString.ConnectionString))
             using (var cmd = new SqlCommand(@"
                 IF NOT EXISTS (
-                    SELECT 1 FROM LinkedUtilityAccounts
+                    SELECT 1 FROM dbo.JamBankLinkedAccounts
                     WHERE UserId = @UserId AND Biller = @Biller AND AccountNumber = @AccountNumber
                 )
                 BEGIN
-                    INSERT INTO LinkedUtilityAccounts (UserId, Biller, AccountNumber, Nickname, IsVerified)
+                    INSERT INTO dbo.JamBankLinkedAccounts (UserId, Biller, AccountNumber, Nickname, IsVerified)
                     VALUES (@UserId, @Biller, @AccountNumber, @Nickname, 1);
                 END", conn))
             {
@@ -106,9 +159,12 @@ namespace BillPaymentWebApp
             }
         }
 
-        private sealed class AccountExistsResult
+        private sealed class AccountVerificationResult
         {
+            public bool Success { get; set; }
             public bool Exists { get; set; }
+            public string AccountStatus { get; set; }
         }
+
     }
 }

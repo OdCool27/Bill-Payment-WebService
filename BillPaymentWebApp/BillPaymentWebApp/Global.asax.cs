@@ -11,6 +11,7 @@ namespace BillPaymentWebApp
     {
         protected void Application_Start(object sender, EventArgs e)
         {
+            JamBankSchemaInitializer.Initialize();
         }
     }
 }

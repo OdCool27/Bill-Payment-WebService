@@ -32,20 +32,7 @@
 
     <div class="panel mb-4">
         <h5 class="mb-3">Linked Biller Accounts</h5>
-        <div class="biller-card">
-            <div>
-                <b>FLOW</b>
-                <span>Account &bull;&bull;&bull;&bull; 4410 &middot; verified &amp; linked</span>
-            </div>
-            <a class="btn btn-gold btn-sm" href="PayBills.aspx?biller=FLOW">Pay</a>
-        </div>
-        <div class="biller-card">
-            <div>
-                <b>SAGICOR LIFE</b>
-                <span>Policy &bull;&bull;&bull;&bull; 9082 &middot; verified &amp; linked</span>
-            </div>
-            <a class="btn btn-gold btn-sm" href="PayBills.aspx?biller=SAGICOR">Pay</a>
-        </div>
+        <asp:Panel ID="pnlLinkedAccounts" runat="server" />
     </div>
 
     <div class="panel" id="RecentTransactions">

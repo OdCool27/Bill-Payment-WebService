@@ -4,7 +4,7 @@ using System.Configuration;
 using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
@@ -14,8 +14,6 @@ namespace BillPaymentWebApp
 {
     public partial class PayBills : System.Web.UI.Page
     {
-        private static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-
         private sealed class BankAccountItem
         {
             public string AccountNumber { get; set; }
@@ -36,7 +34,7 @@ namespace BillPaymentWebApp
             public bool Success { get; set; }
             public string Message { get; set; }
             public string Narrative { get; set; }
-            public string Reference { get; set; }
+            public string TransactionReference { get; set; }
         }
 
         protected void Page_Load(object sender, EventArgs e)
@@ -132,7 +130,7 @@ namespace BillPaymentWebApp
                 }
 
                 decimal updatedBalance = ApplyBankDebitAndTransaction(
-                    userId, bankAccountNumber, biller, billerAccountNumber, amount, bankNarrative, paymentResult.Reference);
+                    userId, bankAccountNumber, biller, billerAccountNumber, amount, bankNarrative, paymentResult.TransactionReference);
 
                 BindBankAccounts(userId, bankAccountNumber);
                 litSelectedBalance.Text = string.Format("{0:C}", updatedBalance);
@@ -147,89 +145,76 @@ namespace BillPaymentWebApp
                 lblMessage.CssClass = "text-success d-block mb-3";
                 lblMessage.Text = "Payment completed and recorded.";
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                System.Diagnostics.Trace.TraceError("PayBills submission failed: {0}", ex);
                 lblMessage.CssClass = "text-danger d-block mb-3";
-                lblMessage.Text = "Unable to process your payment right now. Please try again later.";
+                lblMessage.Text = Context.IsDebuggingEnabled
+                    ? "Unable to process your payment: " + Server.HtmlEncode(ex.GetType().Name + ": " + ex.Message)
+                    : "Unable to process your payment right now. Please try again later.";
             }
         }
 
         private List<BankAccountItem> GetBankAccounts(int userId)
         {
-            var connString = ConfigurationManager.ConnectionStrings["JamBankConnection"];
-            if (connString != null)
+            var connString = ConfigurationManager.ConnectionStrings["PartnerDatabase"];
+            if (connString == null || string.IsNullOrWhiteSpace(connString.ConnectionString))
+                throw new InvalidOperationException("The PartnerDatabase connection string is not configured.");
+
+            var dbAccounts = new List<BankAccountItem>();
+            using (var conn = new SqlConnection(connString.ConnectionString))
+            using (var cmd = new SqlCommand("SELECT AccountNumber, AccountType, Nickname, Balance FROM dbo.JamBankAccounts WHERE UserId = @UserId", conn))
             {
-                var dbAccounts = new List<BankAccountItem>();
-                using (var conn = new SqlConnection(connString.ConnectionString))
-                using (var cmd = new SqlCommand("SELECT AccountNumber, AccountType, Nickname, Balance FROM Accounts WHERE UserId = @UserId", conn))
+                cmd.Parameters.AddWithValue("@UserId", userId);
+                conn.Open();
+                using (var reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("@UserId", userId);
-                    conn.Open();
-                    using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
+                        dbAccounts.Add(new BankAccountItem
                         {
-                            dbAccounts.Add(new BankAccountItem
-                            {
-                                AccountNumber = reader["AccountNumber"].ToString(),
-                                AccountType = reader["AccountType"].ToString(),
-                                Nickname = reader["Nickname"].ToString(),
-                                Balance = Convert.ToDecimal(reader["Balance"])
-                            });
-                        }
+                            AccountNumber = reader["AccountNumber"].ToString(),
+                            AccountType = reader["AccountType"].ToString(),
+                            Nickname = reader["Nickname"].ToString(),
+                            Balance = Convert.ToDecimal(reader["Balance"])
+                        });
                     }
-                }
-                if (dbAccounts.Count > 0)
-                {
-                    return dbAccounts;
                 }
             }
 
-            return new List<BankAccountItem>
-            {
-                new BankAccountItem { AccountNumber = "123456789", AccountType = "Savings", Nickname = "Main Savings", Balance = 25000.00m },
-                new BankAccountItem { AccountNumber = "987654321", AccountType = "Chequing", Nickname = "Daily Chequing", Balance = 4300.50m }
-            };
+            return dbAccounts;
         }
 
         private List<LinkedAccountItem> GetLinkedAccounts(int userId)
         {
-            var connString = ConfigurationManager.ConnectionStrings["JamBankConnection"];
-            if (connString != null)
-            {
-                var dbLinked = new List<LinkedAccountItem>();
-                using (var conn = new SqlConnection(connString.ConnectionString))
-                using (var cmd = new SqlCommand(@"
+            var connString = ConfigurationManager.ConnectionStrings["PartnerDatabase"];
+            if (connString == null || string.IsNullOrWhiteSpace(connString.ConnectionString))
+                throw new InvalidOperationException("The PartnerDatabase connection string is not configured.");
+
+            var dbLinked = new List<LinkedAccountItem>();
+            using (var conn = new SqlConnection(connString.ConnectionString))
+            using (var cmd = new SqlCommand(@"
                     SELECT Biller, AccountNumber, Nickname
-                    FROM LinkedUtilityAccounts
+                    FROM dbo.JamBankLinkedAccounts
                     WHERE UserId = @UserId AND IsVerified = 1", conn))
+            {
+                cmd.Parameters.AddWithValue("@UserId", userId);
+                conn.Open();
+                using (var reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("@UserId", userId);
-                    conn.Open();
-                    using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
+                        dbLinked.Add(new LinkedAccountItem
                         {
-                            dbLinked.Add(new LinkedAccountItem
-                            {
-                                Biller = reader["Biller"].ToString(),
-                                AccountNumber = reader["AccountNumber"].ToString(),
-                                Nickname = reader["Nickname"].ToString()
-                            });
-                        }
+                            Biller = reader["Biller"].ToString(),
+                            AccountNumber = reader["AccountNumber"].ToString(),
+                            Nickname = reader["Nickname"].ToString()
+                        });
                     }
-                }
-                if (dbLinked.Count > 0)
-                {
-                    return dbLinked;
                 }
             }
 
-            return new List<LinkedAccountItem>
-            {
-                new LinkedAccountItem { Biller = "FLOW", AccountNumber = "4410", Nickname = "FLOW Internet" },
-                new LinkedAccountItem { Biller = "SAGICOR", AccountNumber = "9082", Nickname = "Sagicor Life Policy" }
-            };
+            return dbLinked;
         }
 
         private void BindBankAccounts(int userId, string preselectAccount)
@@ -288,33 +273,84 @@ namespace BillPaymentWebApp
 
         private async Task<SubmitPaymentResult> SubmitPaymentAsync(string biller, string accountNumber, decimal amount, string narrative)
         {
-            string baseUrl = ConfigurationManager.AppSettings["PartnerServiceBaseUrl"] ?? "https://localhost:44301/api/partner";
-            string url = $"{baseUrl.TrimEnd('/')}/submit-payment";
+            string baseUrl = ConfigurationManager.AppSettings["PartnerServiceBaseUrl"] ?? "http://localhost:53890";
+            string provider = biller.Equals("SAGICOR", StringComparison.OrdinalIgnoreCase) ? "sagicor" : "flow";
+            string url = $"{baseUrl.TrimEnd('/')}/api/{provider}/payments";
+            string paymentReference = "NCB-" + Guid.NewGuid().ToString("N").ToUpperInvariant();
 
             var payload = new
             {
-                biller = biller,
                 accountNumber = accountNumber,
                 amount = amount,
+                paymentReference = paymentReference,
+                source = "NCB",
                 narrative = narrative
             };
 
             var serializer = new JavaScriptSerializer();
             string json = serializer.Serialize(payload);
 
-            using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
+            using (var client = new WebClient())
             {
-                HttpResponseMessage response = await Http.PostAsync(url, content);
-                string body = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
+                client.Headers[HttpRequestHeader.ContentType] = "application/json";
+                string body;
+                try
+                {
+                    body = await client.UploadStringTaskAsync(new Uri(url), "POST", json);
+                }
+                catch (WebException)
                 {
                     return new SubmitPaymentResult { Success = false, Message = "Partner payment service returned an error." };
                 }
 
-                var parsed = serializer.Deserialize<SubmitPaymentResult>(body);
-                return parsed ?? new SubmitPaymentResult { Success = true, Narrative = narrative };
+                IDictionary<string, object> data = GetAsmxResponseData(serializer.DeserializeObject(body));
+                return data == null
+                    ? new SubmitPaymentResult { Success = false, Message = "Invalid partner service response." }
+                    : new SubmitPaymentResult
+                    {
+                        Success = ReadBoolean(data, "Success"),
+                        Message = ReadString(data, "Message"),
+                        Narrative = ReadString(data, "Narrative"),
+                        TransactionReference = ReadString(data, "TransactionReference")
+                    };
             }
+        }
+
+        private static IDictionary<string, object> GetAsmxResponseData(object response)
+        {
+            var envelope = response as IDictionary<string, object>;
+            if (envelope == null)
+                return null;
+
+            foreach (KeyValuePair<string, object> item in envelope)
+            {
+                if (string.Equals(item.Key, "d", StringComparison.OrdinalIgnoreCase))
+                    return item.Value as IDictionary<string, object>;
+            }
+
+            return envelope;
+        }
+
+        private static bool ReadBoolean(IDictionary<string, object> values, string name)
+        {
+            foreach (KeyValuePair<string, object> item in values)
+            {
+                if (string.Equals(item.Key, name, StringComparison.OrdinalIgnoreCase))
+                    return item.Value is bool && (bool)item.Value;
+            }
+
+            return false;
+        }
+
+        private static string ReadString(IDictionary<string, object> values, string name)
+        {
+            foreach (KeyValuePair<string, object> item in values)
+            {
+                if (string.Equals(item.Key, name, StringComparison.OrdinalIgnoreCase))
+                    return item.Value == null ? null : Convert.ToString(item.Value);
+            }
+
+            return null;
         }
 
         private decimal ApplyBankDebitAndTransaction(
@@ -325,46 +361,46 @@ namespace BillPaymentWebApp
             var target = accounts.First(a => a.AccountNumber == accountNumber);
             decimal newBalance = target.Balance - amount;
 
-            var connString = ConfigurationManager.ConnectionStrings["JamBankConnection"];
-            if (connString != null)
+            var connString = ConfigurationManager.ConnectionStrings["PartnerDatabase"];
+            if (connString == null || string.IsNullOrWhiteSpace(connString.ConnectionString))
+                throw new InvalidOperationException("The PartnerDatabase connection string is not configured.");
+
+            using (var conn = new SqlConnection(connString.ConnectionString))
             {
-                using (var conn = new SqlConnection(connString.ConnectionString))
+                conn.Open();
+                using (var tx = conn.BeginTransaction())
                 {
-                    conn.Open();
-                    using (var tx = conn.BeginTransaction())
+                    using (var debitCmd = new SqlCommand(@"
+                        UPDATE dbo.JamBankAccounts
+                        SET Balance = Balance - @Amount
+                        OUTPUT INSERTED.Balance
+                        WHERE UserId = @UserId AND AccountNumber = @AccountNumber AND Balance >= @Amount", conn, tx))
                     {
-                        using (var debitCmd = new SqlCommand(@"
-                            UPDATE Accounts
-                            SET Balance = Balance - @Amount
-                            OUTPUT INSERTED.Balance
-                            WHERE UserId = @UserId AND AccountNumber = @AccountNumber AND Balance >= @Amount", conn, tx))
-                        {
-                            debitCmd.Parameters.AddWithValue("@Amount", amount);
-                            debitCmd.Parameters.AddWithValue("@UserId", userId);
-                            debitCmd.Parameters.AddWithValue("@AccountNumber", accountNumber);
-                            object scalar = debitCmd.ExecuteScalar();
-                            if (scalar != null && scalar != DBNull.Value)
-                            {
-                                newBalance = Convert.ToDecimal(scalar);
-                            }
-                        }
+                        debitCmd.Parameters.AddWithValue("@Amount", amount);
+                        debitCmd.Parameters.AddWithValue("@UserId", userId);
+                        debitCmd.Parameters.AddWithValue("@AccountNumber", accountNumber);
+                        object scalar = debitCmd.ExecuteScalar();
+                        if (scalar == null || scalar == DBNull.Value)
+                            throw new InvalidOperationException("The JamBank account balance was not updated; confirm the selected account and available balance.");
 
-                        using (var txnCmd = new SqlCommand(@"
-                            INSERT INTO Transactions (UserId, TxnDate, Narrative, Amount, Status, Biller, BillerAccountNumber, ExternalReference)
-                            VALUES (@UserId, @TxnDate, @Narrative, @Amount, 'Completed', @Biller, @BillerAccountNumber, @ExternalReference)", conn, tx))
-                        {
-                            txnCmd.Parameters.AddWithValue("@UserId", userId);
-                            txnCmd.Parameters.AddWithValue("@TxnDate", DateTime.Now);
-                            txnCmd.Parameters.AddWithValue("@Narrative", narrative);
-                            txnCmd.Parameters.AddWithValue("@Amount", -amount);
-                            txnCmd.Parameters.AddWithValue("@Biller", biller);
-                            txnCmd.Parameters.AddWithValue("@BillerAccountNumber", billerAccountNumber);
-                            txnCmd.Parameters.AddWithValue("@ExternalReference", (object)externalRef ?? DBNull.Value);
-                            txnCmd.ExecuteNonQuery();
-                        }
-
-                        tx.Commit();
+                        newBalance = Convert.ToDecimal(scalar);
                     }
+
+                    using (var txnCmd = new SqlCommand(@"
+                        INSERT INTO dbo.JamBankTransactions (UserId, TxnDate, Narrative, Amount, Status, Biller, BillerAccountNumber, ExternalReference)
+                        VALUES (@UserId, @TxnDate, @Narrative, @Amount, 'Completed', @Biller, @BillerAccountNumber, @ExternalReference)", conn, tx))
+                    {
+                        txnCmd.Parameters.AddWithValue("@UserId", userId);
+                        txnCmd.Parameters.AddWithValue("@TxnDate", DateTime.Now);
+                        txnCmd.Parameters.AddWithValue("@Narrative", narrative);
+                        txnCmd.Parameters.AddWithValue("@Amount", -amount);
+                        txnCmd.Parameters.AddWithValue("@Biller", biller);
+                        txnCmd.Parameters.AddWithValue("@BillerAccountNumber", billerAccountNumber);
+                        txnCmd.Parameters.AddWithValue("@ExternalReference", (object)externalRef ?? DBNull.Value);
+                        txnCmd.ExecuteNonQuery();
+                    }
+
+                    tx.Commit();
                 }
             }
 
